@@ -11,10 +11,10 @@ class Expense_Tracker(QMainWindow):
         self.select_category = QComboBox(self)
         self.input_amount = QLineEdit(self)
         self.save_button =QPushButton("Save", self)
-        self.show_table_button = QPushButton("Show Table", self)
         self.add_another_button = QPushButton("Add Another Expense", self)
         self.reset_button = QPushButton("Reset", self)
         self.expense_table = QTableWidget(self)
+        self.expense_table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         self.expenses = []
 
@@ -51,7 +51,6 @@ class Expense_Tracker(QMainWindow):
         vbox.addWidget(self.expense_table)
 
         hbox2 = QHBoxLayout()
-        hbox2.addWidget(self.show_table_button)
         hbox2.addWidget(self.add_another_button)
         hbox2.addWidget(self.reset_button)
         vbox.addLayout(hbox2)
@@ -92,7 +91,6 @@ class Expense_Tracker(QMainWindow):
         """)
 
         self.save_button.clicked.connect(self.store_values)
-        self.show_table_button.clicked.connect(self.display_table)
         self.add_another_button.clicked.connect(self.new_expense)
         self.reset_button.clicked.connect(self.reset_table)
 
@@ -122,36 +120,35 @@ class Expense_Tracker(QMainWindow):
 
         self.expenses.append(expense)
 
+        self.update_table()
+
         self.input_amount.clear()
         self.select_category.setCurrentIndex(-1)
 
-    def display_table(self):
+    def update_table(self):
         if not self.expenses:
             QMessageBox.information(self, "No input", "Please enter your expense first!")
             return
 
-        self.expense_table.show()
-
         self.expense_table.setColumnCount(2)
         self.expense_table.setHorizontalHeaderLabels(["Category", "Amount"])
-        self.expense_table.setRowCount(len(self.expenses))
+        self.expense_table.setRowCount(len(self.expenses) + 1)
+
+        total_expense = 0
 
         for row, expense in enumerate(self.expenses):
             category = expense["category"]
             amount = expense["amount"]
+            total_expense += float(amount)
 
             self.expense_table.setItem(row, 0, QTableWidgetItem(category))
-            self.expense_table.setItem(row, 1, QTableWidgetItem(str(amount)))
+            self.expense_table.setItem(row, 1, QTableWidgetItem(f"${amount:.2f}"))
 
-        self.select_category.setEnabled(False)
-        self.input_amount.setEnabled(False)
-        self.save_button.setEnabled(False)
+        total_row = len(self.expenses)
+        self.expense_table.setItem(total_row, 0, QTableWidgetItem("TOTAL"))
+        self.expense_table.setItem(total_row, 1, QTableWidgetItem(f"${total_expense:.2f}"))
 
     def new_expense(self):
-        self.select_category.setEnabled(True)
-        self.input_amount.setEnabled(True)
-        self.save_button.setEnabled(True)
-
         self.select_category.setCurrentIndex(-1)
         self.input_amount.clear()
         self.input_amount.setFocus()
@@ -170,7 +167,6 @@ class Expense_Tracker(QMainWindow):
         self.save_button.setEnabled(True)
 
         QMessageBox.information(self, "Reset table", "Table reset!")
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
