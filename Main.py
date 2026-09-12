@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QPushButton,
                              QVBoxLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QMessageBox,
-                             QTableWidgetItem)
+                             QTableWidgetItem, QMenu)
 from PyQt5.QtCore import Qt
 
 class Expense_Tracker(QMainWindow):
@@ -11,12 +11,18 @@ class Expense_Tracker(QMainWindow):
         self.select_category = QComboBox(self)
         self.input_amount = QLineEdit(self)
         self.save_button =QPushButton("Save", self)
+
         self.add_another_button = QPushButton("Add Another Expense", self)
         self.reset_button = QPushButton("Reset", self)
+
+        self.actions_button = QPushButton("Actions", self)
+
         self.expense_table = QTableWidget(self)
         self.expense_table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         self.expenses = []
+
+        self.editing_row = None
 
         self.initUI()
 
@@ -45,6 +51,7 @@ class Expense_Tracker(QMainWindow):
 
         hbox1 = QHBoxLayout()
         hbox1.addWidget(self.input_amount)
+        self.input_amount.setPlaceholderText("Enter the amount: ")
         hbox1.addWidget(self.save_button)
         vbox.addLayout(hbox1)
 
@@ -53,11 +60,16 @@ class Expense_Tracker(QMainWindow):
         hbox2 = QHBoxLayout()
         hbox2.addWidget(self.add_another_button)
         hbox2.addWidget(self.reset_button)
+
+        hbox2.addWidget(self.actions_button)
+        self.action_options = QMenu(self)
+        self.edit_action = self.action_options.addAction("Edit")
+        self.delete_action = self.action_options.addAction("Delete")
+        self.actions_button.setMenu(self.action_options)
+
         vbox.addLayout(hbox2)
 
         central_widget.setLayout(vbox)
-
-        self.input_amount.setPlaceholderText("Enter the amount: ")
 
         self.input_amount.setFixedWidth(750)
         self.save_button.setFixedWidth(150)
@@ -94,6 +106,9 @@ class Expense_Tracker(QMainWindow):
         self.add_another_button.clicked.connect(self.new_expense)
         self.reset_button.clicked.connect(self.reset_table)
 
+        self.delete_action.triggered.connect(self.delete_expense)
+        self.edit_action.triggered.connect(self.edit_expense)
+
     def store_values(self):
         if self.select_category.currentIndex() == -1:
             QMessageBox.warning(self, "Error", "Please select a category!")
@@ -118,7 +133,12 @@ class Expense_Tracker(QMainWindow):
             "amount": amount
         }
 
-        self.expenses.append(expense)
+        if self.editing_row is None:
+            self.expenses.append(expense)
+
+        else:
+            self.expenses[self.editing_row] = expense
+            self.editing_row = None
 
         self.update_table()
 
@@ -167,6 +187,44 @@ class Expense_Tracker(QMainWindow):
         self.save_button.setEnabled(True)
 
         QMessageBox.information(self, "Reset table", "Table reset!")
+
+    def delete_expense(self):
+        row = self.expense_table.currentRow()
+
+        if row == -1:
+            QMessageBox.warning(self, "Unselected", "No row selected!")
+            return
+
+        elif row == len(self.expenses):
+            QMessageBox.warning(self, "Error", "Total row can't be deleted!")
+            return
+
+        else:
+            del self.expenses[row]
+            self.update_table()
+
+    def edit_expense(self):
+        row = self.expense_table.currentRow()
+
+        if row == -1:
+            QMessageBox.warning(self, "Unselected", "No row selected!")
+            return
+
+        elif row == len(self.expenses):
+            QMessageBox.warning(self, "Error", "Total row can't be edited!")
+            return
+
+        else:
+            expense = self.expenses[row]
+
+            self.editing_row = row
+
+            category = expense["category"]
+            index = self.select_category.findText(category)
+
+            self.select_category.setCurrentIndex(index)
+            self.input_amount.setText(str(expense["amount"]))
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
