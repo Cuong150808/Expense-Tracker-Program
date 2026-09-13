@@ -19,6 +19,7 @@ class Expense_Tracker(QMainWindow):
 
         self.expense_table = QTableWidget(self)
         self.expense_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.expense_table.hide()
 
         self.expenses = []
 
@@ -147,9 +148,15 @@ class Expense_Tracker(QMainWindow):
 
     def update_table(self):
         if not self.expenses:
-            QMessageBox.information(self, "No input", "Please enter your expense first!")
+            self.expense_table.clear()
+            self.expense_table.setRowCount(0)
+            self.expense_table.setColumnCount(0)
+            self.expense_table.hide()
+
+            QMessageBox.information(self, "No expenses", "There are no expenses left!")
             return
 
+        self.expense_table.show()
         self.expense_table.setColumnCount(2)
         self.expense_table.setHorizontalHeaderLabels(["Category", "Amount"])
         self.expense_table.setRowCount(len(self.expenses) + 1)
@@ -177,11 +184,15 @@ class Expense_Tracker(QMainWindow):
 
     def reset_table(self):
         self.expenses.clear()
+        self.editing_row = None
+
         self.input_amount.clear()
         self.select_category.setCurrentIndex(-1)
 
-        self.expense_table.clearContents()
+        self.expense_table.clear()
         self.expense_table.setRowCount(0)
+        self.expense_table.setColumnCount(0)
+        self.expense_table.hide()
 
         self.input_amount.setFocus()
         self.select_category.setEnabled(True)
@@ -197,13 +208,12 @@ class Expense_Tracker(QMainWindow):
             QMessageBox.warning(self, "Unselected", "No row selected!")
             return
 
-        elif row == len(self.expenses):
+        if row == len(self.expenses):
             QMessageBox.warning(self, "Error", "Total row can't be deleted!")
             return
 
-        else:
-            del self.expenses[row]
-            self.update_table()
+        del self.expenses[row]
+        self.update_table()
 
     def edit_expense(self):
         row = self.expense_table.currentRow()
@@ -212,20 +222,19 @@ class Expense_Tracker(QMainWindow):
             QMessageBox.warning(self, "Unselected", "No row selected!")
             return
 
-        elif row == len(self.expenses):
+        if row == len(self.expenses):
             QMessageBox.warning(self, "Error", "Total row can't be edited!")
             return
 
-        else:
-            expense = self.expenses[row]
+        expense = self.expenses[row]
 
-            self.editing_row = row
+        self.editing_row = row
 
-            category = expense["category"]
-            index = self.select_category.findText(category)
+        category = expense["category"]
+        index = self.select_category.findText(category)
 
-            self.select_category.setCurrentIndex(index)
-            self.input_amount.setText(str(expense["amount"]))
+        self.select_category.setCurrentIndex(index)
+        self.input_amount.setText(str(expense["amount"]))
 
 
 if __name__ == '__main__':
