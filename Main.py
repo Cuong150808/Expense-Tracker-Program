@@ -1,8 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QMainWindow, QLabel, QPushButton,
                              QVBoxLayout, QHBoxLayout, QLineEdit, QComboBox, QTableWidget, QMessageBox,
-                             QTableWidgetItem, QMenu)
-from PyQt5.QtCore import Qt
+                             QTableWidgetItem, QMenu, QDateEdit)
+from PyQt5.QtCore import Qt, QDate
 
 class Expense_Tracker(QMainWindow):
     def __init__(self):
@@ -20,6 +20,8 @@ class Expense_Tracker(QMainWindow):
         self.expense_table = QTableWidget(self)
         self.expense_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.expense_table.hide()
+
+        self.input_date = QDateEdit(self)
 
         self.expenses = []
 
@@ -45,40 +47,50 @@ class Expense_Tracker(QMainWindow):
         self.select_category.lineEdit().setReadOnly(True)
         self.select_category.setCurrentIndex(-1)
 
+        self.input_date.setCalendarPopup(True)
+        self.input_date.setDate(QDate.currentDate())
 
         vbox = QVBoxLayout()
-        vbox.addWidget(self.title_label)
-        vbox.addWidget(self.select_category)
 
+        vbox.addWidget(self.title_label)
+        self.title_label.setAlignment(Qt.AlignCenter)
+
+        # Category and Date
         hbox1 = QHBoxLayout()
-        hbox1.addWidget(self.input_amount)
-        self.input_amount.setPlaceholderText("Enter the amount: ")
-        hbox1.addWidget(self.save_button)
+        hbox1.addWidget(self.select_category)
+        hbox1.addWidget(self.input_date)
+        hbox1.setSpacing(5)
+        hbox1.setAlignment(Qt.AlignCenter)
         vbox.addLayout(hbox1)
+
+        # Amount and Save
+        hbox2 = QHBoxLayout()
+        hbox2.addWidget(self.input_amount)
+        self.input_amount.setPlaceholderText("Enter the amount: ")
+        hbox2.addWidget(self.save_button)
+        hbox2.setSpacing(5)
+        hbox2.setAlignment(Qt.AlignCenter)
+        vbox.addLayout(hbox2)
 
         vbox.addWidget(self.expense_table)
 
-        hbox2 = QHBoxLayout()
-        hbox2.addWidget(self.add_another_button)
-        hbox2.addWidget(self.reset_button)
+        hbox3 = QHBoxLayout()
+        hbox3.addWidget(self.add_another_button)
+        hbox3.addWidget(self.reset_button)
 
-        hbox2.addWidget(self.actions_button)
+        hbox3.addWidget(self.actions_button)
         self.action_options = QMenu(self)
         self.edit_action = self.action_options.addAction("Edit")
         self.delete_action = self.action_options.addAction("Delete")
         self.actions_button.setMenu(self.action_options)
-
-        vbox.addLayout(hbox2)
+        vbox.addLayout(hbox3)
 
         central_widget.setLayout(vbox)
 
-        self.input_amount.setFixedWidth(750)
+        self.select_category.setFixedWidth(400)
+        self.input_date.setFixedWidth(150)
+        self.input_amount.setFixedWidth(400)
         self.save_button.setFixedWidth(150)
-        self.select_category.setFixedWidth(900)
-
-        vbox.setAlignment(self.select_category, Qt.AlignCenter)
-        self.title_label.setAlignment(Qt.AlignCenter)
-        hbox1.setAlignment(Qt.AlignCenter)
 
         self.setStyleSheet("""
             QLabel{
@@ -87,6 +99,11 @@ class Expense_Tracker(QMainWindow):
             QComboBox{
                 font-size: 20px;
                 font-style: italic;
+                border: 3px solid black;
+                border-radius: 5px;
+            }
+            QDateEdit{
+                font-size: 20px;
                 border: 3px solid black;
                 border-radius: 5px;
             }
@@ -117,6 +134,7 @@ class Expense_Tracker(QMainWindow):
 
         category = self.select_category.currentText()
         amount = self.input_amount.text().strip()
+        date = self.input_date.date().toString("dd/MM/yyyy")
 
         try:
             amount = float(amount)
@@ -131,7 +149,8 @@ class Expense_Tracker(QMainWindow):
 
         expense = {
             "category": category,
-            "amount": amount
+            "amount": amount,
+            "date": date
         }
 
         if self.editing_row is None:
@@ -157,8 +176,8 @@ class Expense_Tracker(QMainWindow):
             return
 
         self.expense_table.show()
-        self.expense_table.setColumnCount(2)
-        self.expense_table.setHorizontalHeaderLabels(["Category", "Amount"])
+        self.expense_table.setColumnCount(3)
+        self.expense_table.setHorizontalHeaderLabels(["Date","Category", "Amount"])
         self.expense_table.setRowCount(len(self.expenses) + 1)
 
         total_expense = 0
@@ -166,14 +185,16 @@ class Expense_Tracker(QMainWindow):
         for row, expense in enumerate(self.expenses):
             category = expense["category"]
             amount = expense["amount"]
+            date = expense["date"]
             total_expense += float(amount)
 
-            self.expense_table.setItem(row, 0, QTableWidgetItem(category))
-            self.expense_table.setItem(row, 1, QTableWidgetItem(f"${amount:.2f}"))
+            self.expense_table.setItem(row, 0, QTableWidgetItem(date))
+            self.expense_table.setItem(row, 1, QTableWidgetItem(category))
+            self.expense_table.setItem(row, 2, QTableWidgetItem(f"${amount:.2f}"))
 
         total_row = len(self.expenses)
         self.expense_table.setItem(total_row, 0, QTableWidgetItem("TOTAL"))
-        self.expense_table.setItem(total_row, 1, QTableWidgetItem(f"${total_expense:.2f}"))
+        self.expense_table.setItem(total_row, 2, QTableWidgetItem(f"${total_expense:.2f}"))
 
     def new_expense(self):
         self.editing_row = None
@@ -235,6 +256,7 @@ class Expense_Tracker(QMainWindow):
 
         self.select_category.setCurrentIndex(index)
         self.input_amount.setText(str(expense["amount"]))
+        self.input_date.setDate(QDate.fromString(expense["date"], "dd/MM/yyyy"))
 
 
 if __name__ == '__main__':
