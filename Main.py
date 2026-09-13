@@ -169,6 +169,8 @@ class Expense_Tracker(QMainWindow):
         self.expense_table.setItem(total_row, 1, QTableWidgetItem(f"${total_expense:.2f}"))
 
     def new_expense(self):
+        self.editing_row = None
+
         self.select_category.setCurrentIndex(-1)
         self.input_amount.clear()
         self.input_amount.setFocus()
